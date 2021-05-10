@@ -1,0 +1,41 @@
+function [filteredImage ]= myBilateralFiltering(corruptedImage,sd_sp,sd_int,windowSize)
+%in bilateral ilter we assign each pixel a weighted sum of their neighbour
+%to smoothen the image colors
+%windowsize-the height and width in pixels of a square window that slides across (scans) your image
+[x,y] = meshgrid(-windowSize:windowSize,-windowSize:windowSize);
+
+
+spaceGaussian = exp(-(x.^2+y.^2)/(2*(sd_sp^2)));
+
+
+[ m, n,d ] = size(corruptedImage); %rows col color channels size/dmensions of the image
+
+
+for i = 1:m
+    for j = 1:n
+        leftb = max(i-windowSize,1);
+        rightb = min(i+windowSize,m);
+        topb = max(j-windowSize,1);
+        botb = min(j+windowSize,n);
+        
+        for k = 1:d      
+            submatrix = corruptedImage(leftb:rightb,topb:botb,k);
+            
+            
+            intensityGaussian = exp(-(corruptedImage(i,j,k)-submatrix).^2/(2*sd_int^2));
+            
+            
+            %An additional factor based on the value proximity Nv(v)=e−v22σ2v 
+            %is used to modify the weights. This is the nonlinear part of the filter
+            %and causes pixels with similar value to the central pixel to be weighted more strongly.
+            
+            weightMatrix = intensityGaussian.*spaceGaussian((leftb:rightb)-i+windowSize+1,(topb:botb)-j+windowSize+1);
+            
+            %the sum of all the elements of the matrix,sum(sum(A))
+            
+            filteredImage(i,j,k) = sum(sum(weightMatrix.*submatrix))/sum(sum(weightMatrix));
+        end
+    end
+end
+
+end
